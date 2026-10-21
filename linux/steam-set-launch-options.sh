@@ -61,5 +61,5 @@ done
 
 if [ $was_running = 1 ]; then
     echo "Starting Steam again..."
-    nohup steam >/dev/null 2>&1 &
+    setsid -f steam >/dev/null 2>&1 </dev/null
 fi

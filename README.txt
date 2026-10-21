@@ -104,12 +104,10 @@ of the full client project, which it expects next to this folder as ../akaneiro-
 (https://github.com/SpicyHorseLegacy/akaneiro-client, about 900 MB). Only this step needs it.
 
 
-LICENSE
--------
+ABOUT
+-----
 
-Public domain, like the client source it is built on: see LICENSE (The Unlicense). The files in
-client-source are copied from that client source, and the level data in
-src/Akaneiro.Server/GameData is extracted from it.
-
-This is an unofficial fan project, not affiliated with or endorsed by the makers or publishers of
-Akaneiro: Demon Hunters. It contains no game assets; you need your own copy of the game on Steam.
+This is an unofficial community project, not affiliated with or endorsed by the makers or
+publishers of Akaneiro: Demon Hunters. It contains no game assets; you need your own copy of the
+game on Steam. The files in client-source are copied from the client source, and the level data
+in src/Akaneiro.Server/GameData is extracted from it.

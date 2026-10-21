@@ -34,7 +34,9 @@ OPTION A: FROM STEAM (RECOMMENDED)
 
        "/full/path/to/Akaneiro-Server-Custom-Rebuild/linux/steam-launch.sh" %command%
 
-3. Press Play. The server starts with the game and stops when the game ends.
+   Or let linux/steam-set-launch-options.sh do it (it closes and restarts Steam, which rewrites
+   that setting on exit; --remove takes it out again).
+3. Press Play (or open steam://launch/230310). The server starts with the game and stops when the game ends.
 
 The Steam compatibility setting does not matter: the wrapper starts the game through the
 ubuntu12_32 runtime itself.

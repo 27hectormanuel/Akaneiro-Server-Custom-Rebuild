@@ -26,24 +26,12 @@ plain JSON files. A web server that is already running on port 80 is actually in
 
       winget install Microsoft.DotNet.SDK.8
 
-- **This repository and the client source project**, side by side in one folder. The folder
-  names matter, because the server finds the client by them:
+- **This repository.** On its GitHub page choose **Code > Download ZIP** and unpack it, for
+  example to `C:\Akaneiro`. That gives you the server folder
+  `C:\Akaneiro\Akaneiro-Server-Custom-Rebuild-master`. (With Git:
+  `git clone https://github.com/Paprikhan/Akaneiro-Server-Custom-Rebuild.git`.)
 
-      Akaneiro/
-        akaneiro-client/    the client source released by Spicy Horse
-        akaneiro-server/    this repository
-
-  With Git, in the folder that should hold both (the client is a download of about 900 MB):
-
-      git clone https://github.com/SpicyHorseLegacy/akaneiro-client.git
-      git clone https://github.com/Paprikhan/Akaneiro-Server-Custom-Rebuild.git akaneiro-server
-
-  Downloading both as ZIP from GitHub works too; rename the unpacked folders to
-  `akaneiro-client` and `akaneiro-server` (GitHub names them after the repository and branch,
-  like `akaneiro-client-dev` and `Akaneiro-Server-Custom-Rebuild-master`).
-
-  The server compiles the client's protocol files into itself and reads the client's data
-  tables (items, abilities, prices, ...) from `akaneiro-client/Assets/Resources` when it starts.
+  Everything the server needs from the game client is already in it (`client-source`).
 
 ## Step 1: send the game to your own PC
 
@@ -63,9 +51,17 @@ To undo it later, delete the line again.
 
 ## Step 2: start the server
 
-Open a terminal (PowerShell or Command Prompt) in the `akaneiro-server` folder and run:
+1. Open a terminal: open the Start menu, type `PowerShell` and start **Windows PowerShell**.
+2. Go to the server folder: type `cd`, a space, and the folder's path in quotes, then press Enter.
+   For the example folder from above:
 
-    dotnet run --project src/Akaneiro.Server -c Release
+       cd "C:\Akaneiro\Akaneiro-Server-Custom-Rebuild-master"
+
+   Tip: type `cd ` and drag the folder from the Explorer into the window, which pastes its path.
+   You are in the right folder when `dir` lists `README.md` and the `src` folder.
+3. Start the server:
+
+       dotnet run --project src/Akaneiro.Server -c Release
 
 The first start builds the server, which takes a moment. When it is ready, it prints:
 
@@ -93,7 +89,7 @@ server is your Steam account. The server window logs what happens (`Client #1 co
 
 ## Save games
 
-Save data lives in `akaneiro-server/data/`:
+Save data lives in the `data` folder inside the server folder:
 
 - `data/accounts/<Steam ID>.json`: one file per Steam account, with all its characters, items,
   karma and progress;
@@ -114,7 +110,7 @@ The settings are in `src/Akaneiro.Server/appsettings.json`, section `Akaneiro`:
 | `GamePort` | `7001` | Port of the game server. |
 | `PublicHost` | `127.0.0.1` | The address the game is told to connect to. Must be reachable from every player's PC. |
 | `DataDir` | `../../data` | Where save games go. |
-| `ClientAssetsDir` | `../../../akaneiro-client/Assets` | The client project's `Assets` folder. |
+| `ClientAssetsDir` | `../../client-source` | Where the client's data tables are (the repository's `client-source` folder). |
 | `LogPackets` | `true` | Logs the name of every message between game and server. Set to `false` for a quieter log. |
 
 Relative paths are resolved against `src/Akaneiro.Server` (the folder `dotnet run` runs the server
@@ -132,7 +128,7 @@ Then start `Akaneiro.Server.exe` in that folder. A published build resolves rela
 the folder it is started from, so give it absolute paths, either in the `appsettings.json` next to
 the exe or on the command line:
 
-    Akaneiro.Server.exe --Akaneiro:DataDir=C:\Akaneiro\akaneiro-server\data --Akaneiro:ClientAssetsDir=C:\Akaneiro\akaneiro-client\Assets
+    Akaneiro.Server.exe --Akaneiro:DataDir=C:\Akaneiro\data --Akaneiro:ClientAssetsDir=C:\Akaneiro\Akaneiro-Server-Custom-Rebuild-master\client-source
 
 ## Playing on several PCs in your home network
 
@@ -168,8 +164,11 @@ characters. Only run it where you trust everyone who can connect.
 ## Troubleshooting
 
 **"Client assets not found at ..." when the server starts.**
-The `akaneiro-client` folder is not next to `akaneiro-server`, or `ClientAssetsDir` points to the
-wrong place. It has to point to the client's `Assets` folder.
+`ClientAssetsDir` points to the wrong place; it has to point to the repository's `client-source`
+folder. With the default settings this only happens when the repository is incomplete.
+
+**"Project file does not exist" when starting the server.**
+The terminal is not in the server folder. Go there with `cd` as in step 2.
 
 **"Failed to bind to address http://127.0.0.1:80: address already in use".**
 Another program uses port 80: often IIS ("World Wide Web Publishing Service"), MAMP/XAMPP's

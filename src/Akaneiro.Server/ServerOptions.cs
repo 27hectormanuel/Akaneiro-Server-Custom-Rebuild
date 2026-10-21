@@ -24,7 +24,7 @@ namespace Akaneiro.Server
         /// <summary>Directory for save data (accounts, characters). Relative paths are resolved against the content root.</summary>
         public string DataDir { get; set; } = "data";
 
-        /// <summary>The client project's Assets directory, used to read the game data tables.</summary>
+        /// <summary>Folder with the client's data tables (Resources/Localization/EN): the repository's client-source, or the client project's Assets folder.</summary>
         public string ClientAssetsDir { get; set; } = "";
 
         /// <summary>Log every packet (name only) in both directions.</summary>

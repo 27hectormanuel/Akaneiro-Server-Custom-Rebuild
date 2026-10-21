@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <ClientCS>..\..\..\akaneiro-client\Assets\Scripts\CS</ClientCS>
+    <ClientCS>..\..\client-source\Scripts\CS</ClientCS>
   </PropertyGroup>
 
   <!-- Uses the client's own protocol code, so responses are parsed exactly like the game does. -->

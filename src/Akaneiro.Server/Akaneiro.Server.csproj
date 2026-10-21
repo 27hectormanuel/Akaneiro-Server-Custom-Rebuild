@@ -10,10 +10,10 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <ClientCS>..\..\..\akaneiro-client\Assets\Scripts\CS</ClientCS>
+    <ClientCS>..\..\client-source\Scripts\CS</ClientCS>
   </PropertyGroup>
 
-  <!-- Protocol code is shared with the game client (single source of truth). -->
+  <!-- The game client's own protocol code (copied unchanged into client-source), so both sides share one definition. -->
   <ItemGroup>
     <Compile Include="$(ClientCS)\Comm\Packet.cs" Link="Protocol\Client\Packet.cs" />
     <Compile Include="$(ClientCS)\Comm\NatureTime.cs" Link="Protocol\Client\NatureTime.cs" />

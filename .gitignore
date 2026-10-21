@@ -32,3 +32,8 @@ TestResults/
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+# Linux: stand-alone game copy made by linux/setup-client.sh, and the built redirect library.
+/client/
+linux/redirect/lib32/
+linux/redirect/lib64/

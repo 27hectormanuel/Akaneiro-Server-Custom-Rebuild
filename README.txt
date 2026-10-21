@@ -7,6 +7,7 @@ Spicy Horse released into the public domain (https://github.com/SpicyHorseLegacy
 so the unmodified Steam game can be played again on your own computer.
 
 - How to set it up and play: HOSTING.txt
+- Linux and Steam Deck (native game, no root needed): linux/README-LINUX.txt
 - What does not work (yet), and the assumptions made where the original rules are lost:
   KNOWN-ISSUES.txt
 

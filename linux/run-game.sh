@@ -13,7 +13,9 @@ cd "$GAME_DIR"
 # Mono in this old Unity crashes with some locales.
 export LC_ALL=en_US.UTF-8
 export LD_PRELOAD="$(redirect_preload)"
-export SteamAppId="${SteamAppId:-230310}"
+# Always Akaneiro's Steam app id: a Non-Steam game shortcut gets an id of its own, and the Steam
+# login would fail with it.
+export SteamAppId=230310 SteamGameId=230310
 # libSteamworksNative.so and libsteam_api.so sit next to the executable; Mono only finds them
 # through the library path.
 export LD_LIBRARY_PATH="$PWD${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"

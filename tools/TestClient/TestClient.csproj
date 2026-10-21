@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <NoWarn>$(NoWarn);CS0108;CS0162;CS0168;CS0219;CS0414;CS0649;CS1717;CS8981</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <ClientCS>..\..\..\akaneiro-client\Assets\Scripts\CS</ClientCS>
+  </PropertyGroup>
+
+  <!-- Uses the client's own protocol code, so responses are parsed exactly like the game does. -->
+  <ItemGroup>
+    <Compile Include="$(ClientCS)\Comm\Packet.cs" Link="Client\Packet.cs" />
+    <Compile Include="$(ClientCS)\Comm\NatureTime.cs" Link="Client\NatureTime.cs" />
+    <Compile Include="$(ClientCS)\Protocol\TypeDefine.cs" Link="Client\TypeDefine.cs" />
+    <Compile Include="$(ClientCS)\Protocol\TypeDefineCactus.cs" Link="Client\TypeDefineCactus.cs" />
+    <Compile Include="$(ClientCS)\Protocol\ProtocolGameServer_Client.cs" Link="Client\ProtocolGameServer_Client.cs" />
+    <Compile Include="$(ClientCS)\Protocol\ProtocolBattle_Client.cs" Link="Client\ProtocolBattle_Client.cs" />
+    <Compile Include="..\..\src\Akaneiro.Server\Protocol\UnityShim.cs" Link="Client\UnityShim.cs" />
+  </ItemGroup>
+
+</Project>

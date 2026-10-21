@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>Akaneiro.Server</RootNamespace>
+    <!-- Generated client protocol code triggers lots of harmless warnings. -->
+    <NoWarn>$(NoWarn);CS0108;CS0162;CS0168;CS0219;CS0414;CS0649;CS1717;CS8981</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <ClientCS>..\..\..\akaneiro-client\Assets\Scripts\CS</ClientCS>
+  </PropertyGroup>
+
+  <!-- Protocol code is shared with the game client (single source of truth). -->
+  <ItemGroup>
+    <Compile Include="$(ClientCS)\Comm\Packet.cs" Link="Protocol\Client\Packet.cs" />
+    <Compile Include="$(ClientCS)\Comm\NatureTime.cs" Link="Protocol\Client\NatureTime.cs" />
+    <Compile Include="$(ClientCS)\Protocol\TypeDefine.cs" Link="Protocol\Client\TypeDefine.cs" />
+    <Compile Include="$(ClientCS)\Protocol\TypeDefineCactus.cs" Link="Protocol\Client\TypeDefineCactus.cs" />
+    <Compile Include="$(ClientCS)\Protocol\ProtocolGameServer_Client.cs" Link="Protocol\Client\ProtocolGameServer_Client.cs" />
+    <Compile Include="$(ClientCS)\Protocol\ProtocolBattle_Client.cs" Link="Protocol\Client\ProtocolBattle_Client.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="GameData\**\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

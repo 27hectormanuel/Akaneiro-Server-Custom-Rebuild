@@ -1,0 +1,103 @@
+# Known issues and limitations
+
+The server is complete enough to play the whole game, but a few things are different from the
+original. They fall into three groups: behaviour of the game client that a server cannot change,
+features of the original online service that are not built, and rules the original server had
+that are lost and were rebuilt by assumption.
+
+## Client behaviour (cannot be fixed on the server)
+
+The game client is used as it is, so these stay:
+
+- **Missions on "Low" end after their first task.** That is the original mission data: on Low
+  every mission has a single task, the full story with its boss starts on Medium. (Recordings of
+  the original game show the same.) The stone gate to the boss in A2_M2, for example, only opens
+  in a Medium task.
+- **"Task complete: Unkonw Task"** (sic) appears after some tasks. The server sends the correct
+  branch and task ids; the client looks the name up in its own mission data and does not find it
+  there. Its data also calls every step of "Raging Ushi Oni" "Wicked Beasts".
+- **Quick slots** only point to the bag slot: an item put on the quick bar still occupies its bag
+  slot.
+- **Mission timer, minimap, the shimmer on switches and the hand/kunai mouse cursor** are drawn by
+  the client and behave as it decides.
+- **Crafting materials show a value of 0** in their tooltip: the client only computes values for
+  equipment. Selling them still pays (a fifth of their shop price each).
+- **The "speed up" panel of the mission cooldown** does not send anything to the server. That is
+  why mission cooldowns are switched off (see below).
+- **Thrown balls start at the monster's centre**, not in its hand (the client's projectile code).
+- **The crystal shop opens in the Steam overlay** when the client wants crystals, for example when
+  karma is short for a training. That page does not exist anymore, so the overlay shows an error
+  page; close it. Crystal prices are free on this server, karma prices are not.
+- **The client asks for the "friend reward" twice** every time a map loads. The server answers
+  only once per visit, otherwise the mission summary screen would close right after opening.
+
+## Not built: the original online features
+
+*Akaneiro* had no real-time co-op: the network protocol has no messages for other players in the
+same level. Its online side was social and asynchronous, and none of it exists on this server yet:
+
+- **Summoning friends as allies.** In the original you could take a friend's character along as an
+  AI-controlled ally, and you earned rewards when friends hired yours. The client still has the
+  summon button; its friend list stays empty here.
+- **Chat with other players.** Messages are only echoed back to the sender. Since several players
+  can be connected to one server, this one could be added.
+- **Leaderboards, events, mail, gift and redeem codes.** The mailbox is always empty, codes are
+  never valid, event reports are accepted and ignored.
+- **Buying crystals with real money.** Not possible; instead, everything that costs crystals is
+  free (revivals, stash tabs, crystal items, spirit rentals priced in crystals, finishing
+  trainings early, crafting with crystals).
+- **Well upgrades** were bought with crystals and are not offered by this client: the well stays
+  on level 1 (100 karma every 15 minutes).
+- **Steam login checks.** The server does not verify Steam tickets or DLC ownership; every login
+  is accepted. Fine on your own PC or LAN, unsafe on the open internet (see [HOSTING.md](HOSTING.md)).
+
+Several players can use one server at the same time, but each plays in their own world and they
+never meet.
+
+## Approximations
+
+- **Monster pathfinding.** The level files contain no navigation mesh (the client computes it from
+  the level geometry when it loads). The server learns where the ground is walkable from the
+  player's own trail, spawn points and wander routes, and monsters follow those ways around
+  obstacles. In an area the player has not walked yet, a monster may take a straighter line than
+  the client would.
+- **Abilities only damage monsters.** Baskets, chests and switches break from normal attacks.
+- **A spirit helper that levels up** during a mission shows its new level the next time the spirit
+  list is opened.
+
+## Assumptions (original formulas lost)
+
+The original server code is lost. Where the client's data does not say how something works, the
+server uses these rules. They are the first place to look when something feels off balance.
+
+- **Experience:** monsters give 4 times the experience in their prefab.
+- **Kill chains:** GOOD from 3 kills, LETHAL from 6, SLAYER from 10, paying 50 / 75 / 100 % of
+  the chain's experience as a bonus (matches recordings: 3 wolves +18 XP, 6 wolves +54 XP). A chain
+  ends 3 seconds after the last kill.
+- **Threat levels:** beating a threat level unlocks the next one of the same map.
+- **Mission cooldowns** are switched off: maps can be replayed at once. The original rules
+  (the n-th run within a day rests for the n-th entry of `MissionsThreatCycle`) are implemented in
+  `MissionMap` and can be switched on with `CooldownsEnabled`.
+- **Vendor prices:** buying costs item level × base value (2.5 times what selling pays); the rare
+  vendor's items are 2 levels higher and cost twice as much; 16 + 4 offers, replaced every 12 hours.
+  Selling equipment pays exactly the tooltip value; stackables sell for a fifth of their shop price.
+- **Armor:** armor = the worn pieces (as their tooltips show) + 5 per point of DEF; it takes away
+  armor / (armor + 2000) of a monster's hit (constants from the client's `GameConfig.xml`), at most
+  75 %. On level 1 that is below 10 %.
+- **Talents:** one point per level from level 2; the discipline picked at creation counts as one
+  more. Per point: Prowess 30/10/20, Fortitude 20/30/10, Cunning 10/20/30 POW/DEF/SKILL (from the
+  client).
+- **Starting masteries:** the two the character creation screen shows for the discipline, on level 1.
+- **Character numbers:** critical chance 5 % + 0.025 % per SKILL point, critical hits do 135 %,
+  +0.2 % damage per POW point. Gems, enchantments, elements, masteries, food and spirits work as
+  their descriptions say. Food without a number in its text: "small boost" +25 % (speed and crit
+  +10, experience +25 %), "more than doubles" +110 %, regeneration +50 % / +100 %. Health does not
+  regenerate on its own (only through potions, food, spirits and the Heavy Armor mastery); energy
+  refills in about 25 seconds.
+- **Crafting materials:** normal monsters drop one 6 % of the time, bosses 1–2, chests 35 % (55 %
+  of them enchantment materials, 25 % gems, 17 % element cores, 3 % karma cores). None in the
+  tutorial.
+- **Daily reward:** follows the `DayReward` table; after its last day it starts over, and a missed
+  day starts over at day 1.
+- **Looping spawners:** every one in the levels has a loop count of 0, read as "do not repeat".
+- **Wandering monsters** rest 2 seconds at each waypoint.

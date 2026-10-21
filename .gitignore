@@ -1,0 +1,34 @@
+# Save data of the local players (accounts carry the Steam account name and id). Anchored to the
+# top folder, so it does not also hide the source folder src/Akaneiro.Server/Data on Windows.
+/data/
+
+# Local notes and a decompiled copy of the Steam client, for looking things up only.
+/reference/
+
+# Build output.
+bin/
+obj/
+publish/
+artifacts/
+
+# Test results.
+*.trx
+TestResults/
+
+# Logs and temporary files.
+*.log
+*.tmp
+
+# IDEs and editors.
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.rsuser
+*.DotSettings.user
+
+# Operating systems.
+Thumbs.db
+Desktop.ini
+.DS_Store

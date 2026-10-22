@@ -8,8 +8,9 @@ mkdir -p lib32 lib64
 
 if command -v zig >/dev/null 2>&1; then
     ZIG="zig"
-elif [ -x ../../../.toolchain/bin/python ] && ../../../.toolchain/bin/python -m ziglang version >/dev/null 2>&1; then
-    ZIG="../../../.toolchain/bin/python -m ziglang"
+elif TOOLCHAIN="$(cd ../../.. && pwd)/.toolchain" && [ -x "$TOOLCHAIN/bin/python" ] \
+        && "$TOOLCHAIN/bin/python" -m ziglang version >/dev/null 2>&1; then
+    ZIG="$TOOLCHAIN/bin/python -m ziglang"
 elif python3 -m ziglang version >/dev/null 2>&1; then
     ZIG="python3 -m ziglang"
 fi

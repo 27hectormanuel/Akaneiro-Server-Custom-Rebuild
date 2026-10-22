@@ -11,10 +11,13 @@
  *   AKANEIRO_SERVER_IP        address of the server (default 127.0.0.1)
  *   AKANEIRO_HTTP_PORT        port of the server's web service (default 8880)
  *   AKANEIRO_REDIRECT_HOSTS   comma separated host names to redirect (default mw.angry-red.com)
+ *   AKANEIRO_FONT_DIR         extra folder searched with /usr/share/fonts (see "Fonts" below)
  *   AKANEIRO_REDIRECT_DEBUG   set to 1 to log every redirect to stderr
  */
 #define _GNU_SOURCE
 #include <dlfcn.h>
+#include <ftw.h>
+#include <glob.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -23,6 +26,7 @@
 #include <string.h>
 #include <strings.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 
 #define DEFAULT_IP "127.0.0.1"
 #define DEFAULT_HTTP_PORT 8880
@@ -111,6 +115,59 @@ int gethostbyname2_r(const char *name, int af, struct hostent *ret, char *buf, s
 {
     REAL(gethostbyname2_r);
     return real_gethostbyname2_r(map_name(name, "gethostbyname2_r"), af, ret, buf, buflen, result, h_errnop);
+}
+
+/*
+ * Fonts. The game's speech bubbles use the dynamic font "Arial", which this Unity version looks
+ * up by family name among the files under /usr/share/fonts only (SteamOS has no Arial there, and
+ * the folder is read-only). Scans of /usr/share/fonts also cover AKANEIRO_FONT_DIR, a folder with
+ * an Arial replacement (Proton's share/fonts by default).
+ */
+static int is_system_font_dir(const char *path)
+{
+    return path && strncmp(path, "/usr/share/fonts", 16) == 0 && (path[16] == 0 || path[16] == '/');
+}
+
+static const char *extra_font_dir(void)
+{
+    const char *d = getenv("AKANEIRO_FONT_DIR");
+    return d && *d ? d : NULL;
+}
+
+int ftw(const char *dir, int (*fn)(const char *, const struct stat *, int), int nopenfd)
+{
+    REAL(ftw);
+    int r = real_ftw(dir, fn, nopenfd);
+    if (r == 0 && is_system_font_dir(dir) && extra_font_dir()) {
+        if (debug())
+            fprintf(stderr, "[akaneiro_redirect] ftw(%s) + %s\n", dir, extra_font_dir());
+        r = real_ftw(extra_font_dir(), fn, nopenfd);
+    }
+    return r;
+}
+
+int glob(const char *pattern, int flags, int (*errfunc)(const char *, int), glob_t *pglob)
+{
+    static __typeof__(glob) *real_glob;
+    if (!real_glob) {
+#if defined(__i386__)
+        /* The game links against the original 32-bit glob; keep calling that version. */
+        real_glob = (__typeof__(glob) *)dlvsym(RTLD_NEXT, "glob", "GLIBC_2.0");
+#endif
+        if (!real_glob)
+            real_glob = (__typeof__(glob) *)dlsym(RTLD_NEXT, "glob");
+    }
+    int r = real_glob(pattern, flags, errfunc, pglob);
+    if (is_system_font_dir(pattern) && extra_font_dir() && (r == 0 || r == GLOB_NOMATCH)) {
+        char extra[4096];
+        snprintf(extra, sizeof extra, "%s%s", extra_font_dir(), pattern + 16);
+        if (debug())
+            fprintf(stderr, "[akaneiro_redirect] glob(%s) + %s\n", pattern, extra);
+        int r2 = real_glob(extra, flags | (r == 0 ? GLOB_APPEND : 0), errfunc, pglob);
+        if (r == GLOB_NOMATCH)
+            r = r2;
+    }
+    return r;
 }
 
 int connect(int fd, const struct sockaddr *addr, socklen_t len)

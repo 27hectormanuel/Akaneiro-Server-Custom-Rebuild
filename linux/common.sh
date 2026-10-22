@@ -20,6 +20,15 @@ SERVER_LOG="$AKANEIRO_DATA_DIR/server.log"
 SERVER_PID="$AKANEIRO_DATA_DIR/server.pid"
 STEAM_ROOT="${STEAM_ROOT:-$HOME/.steam/steam}"
 
+# Folder with an "Arial" for the speech bubbles (see akaneiro_redirect.c): Proton's replacement fonts.
+if [ -z "$AKANEIRO_FONT_DIR" ]; then
+    for d in "$STEAM_ROOT"/steamapps/common/Proton*/files/share/fonts \
+             /run/media/*/*/steamapps/common/Proton*/files/share/fonts; do
+        [ -f "$d/arial.ttf" ] && { AKANEIRO_FONT_DIR="$d"; break; }
+    done
+fi
+export AKANEIRO_FONT_DIR
+
 find_dotnet() {
     if command -v dotnet >/dev/null 2>&1; then command -v dotnet
     elif [ -x "$HOME/.dotnet/dotnet" ]; then echo "$HOME/.dotnet/dotnet"

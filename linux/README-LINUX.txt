@@ -9,6 +9,10 @@ guide does with the hosts file, port 80 and Steam, without needing root:
 - redirect/akaneiro_redirect.so is loaded into the game with LD_PRELOAD. It answers the game's
   lookups of mw.angry-red.com with the server's address (instead of /etc/hosts) and moves its
   connection to port 80 to the server's web port, 8880 (ports below 1024 need root on Linux).
+- Speech bubbles use the system font "Arial", which this Unity version only looks for in
+  /usr/share/fonts. The redirect library adds the free Arial replacement that comes with Proton
+  (any installed Proton, found automatically; or set AKANEIRO_FONT_DIR to a folder with an
+  arial.ttf). Without it the bubbles appear without text.
 - The game is started through Steam's old "scout" runtime (from Steam Linux Runtime 1.0, or the
   former ubuntu12_32/steam-runtime, which Steam replaced with a stub in late 2026). Started directly, or inside the
   newer Steam Linux Runtime containers, this Unity version crashes in the 32-bit Mesa driver.
@@ -112,4 +116,9 @@ TROUBLESHOOTING
 - Started from Steam (also in Game Mode) and nothing happens: data/launch.log has the output of
   the last launch. "No Steam scout runtime found" means Steam Linux Runtime 1.0 (scout) is not
   installed: install it from the Steam library (Tools), or any game that uses it.
+- Speech bubbles without text: no Proton is installed (install any Proton version in Steam) or
+  AKANEIRO_FONT_DIR points to a folder without arial.ttf.
+- After a SteamOS update the redirect library will not build ("No module named ziglang"): the
+  system Python changed; recreate the zig environment with
+      rm -rf ../.toolchain && python3 -m venv ../.toolchain && ../.toolchain/bin/pip install ziglang
 - The game's own log: ~/.config/unity3d/Spicy Horse/Akaneiro/Player.log

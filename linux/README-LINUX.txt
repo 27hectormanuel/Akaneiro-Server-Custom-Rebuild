@@ -40,7 +40,7 @@ OPTION A: FROM STEAM (RECOMMENDED)
 3. Press Play (or open steam://launch/230310). The server starts with the game and stops when the game ends.
 
 The Steam compatibility setting does not matter: the wrapper starts the game through the
-ubuntu12_32 runtime itself.
+scout runtime itself.
 
 
 OPTION B: A STAND-ALONE COPY

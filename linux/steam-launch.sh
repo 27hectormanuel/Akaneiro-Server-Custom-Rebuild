@@ -8,6 +8,13 @@
 # use (see run-game.sh), so the Steam compatibility setting does not matter.
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
+# Nothing shows a terminal in Game Mode: keep the output of every launch (this script, the server
+# start and the game) in data/launch.log.
+mkdir -p "$AKANEIRO_DATA_DIR"
+exec >"$AKANEIRO_DATA_DIR/launch.log" 2>&1
+echo "[$(date '+%F %T')] steam-launch: $*"
+echo "scout runtime: $(find_scout_runtime || echo none)"
+
 # Find the game folder in Steam's command line (the path of its Akaneiro or Akaneiro.x86 script).
 GAME_DIR=""
 for arg in "$@"; do

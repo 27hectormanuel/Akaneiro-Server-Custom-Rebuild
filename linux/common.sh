@@ -19,7 +19,6 @@ AKANEIRO_DATA_DIR="${AKANEIRO_DATA_DIR:-$REPO_DIR/data}"
 SERVER_LOG="$AKANEIRO_DATA_DIR/server.log"
 SERVER_PID="$AKANEIRO_DATA_DIR/server.pid"
 STEAM_ROOT="${STEAM_ROOT:-$HOME/.steam/steam}"
-STEAM_RUNTIME_RUN="$STEAM_ROOT/ubuntu12_32/steam-runtime/run.sh"
 
 find_dotnet() {
     if command -v dotnet >/dev/null 2>&1; then command -v dotnet
@@ -55,4 +54,24 @@ server_ready() {
 server_is_local() {
     [ "$AKANEIRO_SERVER_IP" = 127.0.0.1 ] || [ "$AKANEIRO_SERVER_IP" = localhost ] \
         || ip -o addr show 2>/dev/null | grep -qw "inet $AKANEIRO_SERVER_IP"
+}
+
+# run.sh of the old scout LD_LIBRARY_PATH runtime. Steam used to ship it as ubuntu12_32/steam-runtime;
+# since late 2026 that is a stub that runs games on the host, and the runtime lives in
+# steamapps/common/LegacySteamRuntime or, still, in "Steam Linux Runtime 1.0 (scout)".
+find_scout_runtime() {
+    local libs=("$STEAM_ROOT/steamapps") lib run
+    # Other Steam libraries (SD cards, extra drives).
+    while IFS= read -r lib; do libs+=("$lib/steamapps"); done < <(
+        grep -oP '^\s*"path"\s*"\K[^"]+' "$STEAM_ROOT/steamapps/libraryfolders.vdf" 2>/dev/null)
+    for lib in "${libs[@]}"; do
+        for run in "$lib/common/LegacySteamRuntime/run.sh" "$lib/common/SteamLinuxRuntime/steam-runtime/run.sh"; do
+            [ -x "$run" ] && { echo "$run"; return 0; }
+        done
+    done
+    run="$STEAM_ROOT/ubuntu12_32/steam-runtime/run.sh"
+    if [ -x "$run" ] && [ "$(basename "$(realpath "$run")")" != legacy-run-stub.sh ]; then
+        echo "$run"; return 0
+    fi
+    return 1
 }

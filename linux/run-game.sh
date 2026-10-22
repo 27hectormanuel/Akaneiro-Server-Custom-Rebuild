@@ -21,10 +21,12 @@ export SteamAppId=230310 SteamGameId=230310
 export LD_LIBRARY_PATH="$PWD${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
 # The game is 32-bit Unity 4.1. Started directly or inside the newer Steam Linux Runtime
-# containers it crashes in the system's 32-bit Mesa driver; the old ubuntu12_32 runtime of the
-# Steam client runs it fine.
-if [ -x "$STEAM_RUNTIME_RUN" ]; then
-    exec "$STEAM_RUNTIME_RUN" ./Akaneiro.x86 "$@"
+# containers it crashes in the system's 32-bit Mesa driver; the old "scout" LD_LIBRARY_PATH
+# runtime runs it fine.
+RUNTIME_RUN="$(find_scout_runtime)" || true
+if [ -n "$RUNTIME_RUN" ]; then
+    exec "$RUNTIME_RUN" ./Akaneiro.x86 "$@"
 fi
-echo "Steam runtime not found at $STEAM_RUNTIME_RUN, starting the game directly" >&2
+echo "No Steam scout runtime found (install \"Steam Linux Runtime 1.0 (scout)\" in Steam);" \
+     "starting the game directly" >&2
 exec ./Akaneiro.x86 "$@"

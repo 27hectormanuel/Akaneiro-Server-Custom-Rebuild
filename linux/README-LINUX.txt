@@ -9,7 +9,8 @@ guide does with the hosts file, port 80 and Steam, without needing root:
 - redirect/akaneiro_redirect.so is loaded into the game with LD_PRELOAD. It answers the game's
   lookups of mw.angry-red.com with the server's address (instead of /etc/hosts) and moves its
   connection to port 80 to the server's web port, 8880 (ports below 1024 need root on Linux).
-- The game is started through Steam's old ubuntu12_32 runtime. Started directly, or inside the
+- The game is started through Steam's old "scout" runtime (from Steam Linux Runtime 1.0, or the
+  former ubuntu12_32/steam-runtime, which Steam replaced with a stub in late 2026). Started directly, or inside the
   newer Steam Linux Runtime containers, this Unity version crashes in the 32-bit Mesa driver.
 
 
@@ -108,4 +109,7 @@ TROUBLESHOOTING
   folder on the library path. Start it through run-game.sh, play.sh or steam-launch.sh.
 - "wrong ELF class" lines on the terminal are harmless: both the 32-bit and the 64-bit redirect
   library are preloaded and each program takes the one that fits.
+- Started from Steam (also in Game Mode) and nothing happens: data/launch.log has the output of
+  the last launch. "No Steam scout runtime found" means Steam Linux Runtime 1.0 (scout) is not
+  installed: install it from the Steam library (Tools), or any game that uses it.
 - The game's own log: ~/.config/unity3d/Spicy Horse/Akaneiro/Player.log

@@ -39,6 +39,8 @@ export LD_LIBRARY_PATH="$PWD${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
 # Notes memory use and saves thread stacks if the game hangs (data/logs). AKANEIRO_HANG_WATCH=0 = off.
 if [ "${AKANEIRO_HANG_WATCH:-1}" != 0 ]; then
+    # Garbage collection times in the game log, to tell GC pauses from other stalls.
+    export GC_PRINT_STATS="${GC_PRINT_STATS:-1}"
     setsid -f "$LINUX_DIR/hang-watch.sh" </dev/null >/dev/null 2>&1
 fi
 

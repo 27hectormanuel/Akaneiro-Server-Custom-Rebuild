@@ -3,7 +3,8 @@
 # - every minute, notes the game's memory use (data/logs/watch-*.log);
 # - when the game stops sending its pings to the server (every 2 seconds while it is connected)
 #   for HANG_SECONDS while it still runs, saves what every thread is doing to
-#   data/logs/hang-*.txt. The game is left alone; this only looks.
+#   data/logs/hang-*.txt: thread states, and the C# stacks and locks from Mono's thread dump
+#   (SIGQUIT, which the game survives), plus the last garbage collections.
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 # The game's preload libraries are not for gdb and the tools here.
 unset LD_PRELOAD
@@ -54,9 +55,22 @@ report() {
                 "$(awk '{print $3}' "$task/stat" 2>/dev/null)" "$(cat "$task/wchan" 2>/dev/null)"
         done
         echo
-        echo "== Native stacks (gdb)"
-        timeout 120 gdb -batch -nx -p "$pid" -ex "set pagination off" -ex "info sharedlibrary" \
-            -ex "thread apply all bt 30" 2>&1 | grep -v -E "^\[New LWP|^warning: (Could not|Unable)"
+        # Mono prints every thread's C# stack and the locks it owns on SIGQUIT, into the game
+        # log, and carries on. (Calling into the game with gdb instead crashes it.)
+        local before
+        before=$(grep -c "Full thread dump" "$UNITY_LOG" 2>/dev/null)
+        kill -QUIT "$pid" 2>/dev/null
+        for _ in $(seq 20); do
+            sleep 1
+            [ "$(grep -c "Full thread dump" "$UNITY_LOG" 2>/dev/null)" -gt "$before" ] && break
+        done
+        sleep 2
+        echo "== C# threads (Mono thread dump)"
+        awk -v n=$((before + 1)) '/Full thread dump/{c++} c==n' "$UNITY_LOG" 2>/dev/null \
+            | grep -E '^"|^  at |^Full thread dump' | head -n 600
+        echo
+        echo "== Last garbage collections"
+        grep -E "Complete collection took|heapsize =" "$UNITY_LOG" 2>/dev/null | tail -n 20
         echo
         echo "== Last lines of the game log"
         tail -n 40 "$UNITY_LOG" 2>/dev/null

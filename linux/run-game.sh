@@ -37,6 +37,11 @@ export SteamAppId=230310 SteamGameId=230310
 # through the library path.
 export LD_LIBRARY_PATH="$PWD${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
+# Notes memory use and saves thread stacks if the game hangs (data/logs). AKANEIRO_HANG_WATCH=0 = off.
+if [ "${AKANEIRO_HANG_WATCH:-1}" != 0 ]; then
+    setsid -f "$LINUX_DIR/hang-watch.sh" </dev/null >/dev/null 2>&1
+fi
+
 # The game is 32-bit Unity 4.1. Started directly or inside the newer Steam Linux Runtime
 # containers it crashes in the system's 32-bit Mesa driver; the old "scout" LD_LIBRARY_PATH
 # runtime runs it fine.

@@ -128,4 +128,8 @@ TROUBLESHOOTING
       rm -rf ../.toolchain && python3 -m venv ../.toolchain && ../.toolchain/bin/pip install ziglang
 - Logs of the last 10 runs are kept in data/logs (server-*, game-*, launch-*), so a problem can
   still be looked at after the game was started again.
+- The game freezes: linux/hang-watch.sh runs with every game. When the game stops pinging the
+  server for 20 seconds, it saves the stacks of all game threads to data/logs/hang-*.txt, and it
+  notes the game's memory use every minute in data/logs/watch-*.log. AKANEIRO_HANG_WATCH=0
+  turns it off; AKANEIRO_ALLOW_DEBUG=0 keeps debuggers out of the game.
 - The game's own log: ~/.config/unity3d/Spicy Horse/Akaneiro/Player.log

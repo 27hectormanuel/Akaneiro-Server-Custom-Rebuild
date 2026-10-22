@@ -12,6 +12,7 @@
  *   AKANEIRO_HTTP_PORT        port of the server's web service (default 8880)
  *   AKANEIRO_REDIRECT_HOSTS   comma separated host names to redirect (default mw.angry-red.com)
  *   AKANEIRO_FONT_DIR         extra folder searched with /usr/share/fonts (see "Fonts" below)
+ *   AKANEIRO_ALLOW_DEBUG      0 = do not let the hang watchdog attach a debugger
  *   AKANEIRO_REDIRECT_DEBUG   set to 1 to log every redirect to stderr
  */
 #define _GNU_SOURCE
@@ -25,6 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <sys/prctl.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 
@@ -79,6 +81,18 @@ static const char *map_name(const char *name, const char *func)
     if (debug())
         fprintf(stderr, "[akaneiro_redirect] %s(%s) -> %s\n", func, name, server_ip());
     return server_ip();
+}
+
+/*
+ * Lets linux/hang-watch.sh attach gdb when the game hangs: with Yama's ptrace_scope=1 only a parent
+ * may debug a process, and the watchdog is not the game's parent. AKANEIRO_ALLOW_DEBUG=0 turns it off.
+ */
+__attribute__((constructor)) static void allow_debugger(void)
+{
+    const char *allow = getenv("AKANEIRO_ALLOW_DEBUG");
+    if (allow && *allow == '0')
+        return;
+    prctl(0x59616d61 /* PR_SET_PTRACER */, (unsigned long)-1 /* PR_SET_PTRACER_ANY */, 0, 0, 0);
 }
 
 #define REAL(name) \

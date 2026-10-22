@@ -81,6 +81,8 @@ AKANEIRO_SERVER_IP (127.0.0.1)
                              (PublicHost) and by the redirect library in the game.
 AKANEIRO_LISTEN (127.0.0.1)  where the web service listens; 0.0.0.0 for a home network.
 AKANEIRO_DATA_DIR (data)     save games and the server log.
+AKANEIRO_GC_HEAP_MB (512)    initial size of the game's memory for C# objects (see "stutter"
+                             below); 0 = Mono's default.
 AKANEIRO_BUBBLE_FONT (edo)   font of the speech bubbles: edo (the game's own font) or arial
                              (the original look). In Steam, put it before the wrapper:
                              AKANEIRO_BUBBLE_FONT=arial "/path/to/linux/steam-launch.sh" %command%
@@ -128,9 +130,17 @@ TROUBLESHOOTING
       rm -rf ../.toolchain && python3 -m venv ../.toolchain && ../.toolchain/bin/pip install ziglang
 - Logs of the last 10 runs are kept in data/logs (server-*, game-*, launch-*), so a problem can
   still be looked at after the game was started again.
-- The game freezes: linux/hang-watch.sh runs with every game. When the game stops pinging the
-  server for 20 seconds, it saves the C# stacks and held locks of all game threads (Mono's
+- Stutter in long missions, and map loads of a minute or more after them: the game allocates tens
+  of MB per second, and its Mono runtime collects garbage each time a third of its heap is new,
+  which grew to twice a second at up to 100 ms each during a 30-minute mission. run-game.sh
+  therefore starts the game with a 512 MB heap (GC_INITIAL_HEAP_SIZE), so it collects far less
+  often. The game's heap also keeps growing during a mission (12 to 87 MB in 30 minutes), which
+  makes each collection and the next map load slower; going back to the village and restarting
+  the game now and then resets it.
+- The game freezes: linux/hang-watch.sh runs with every game. When the game, on a screen where it
+  pings the server, sends nothing for 20 seconds, it saves the C# stacks and held locks of all game threads (Mono's
   thread dump, which the game survives) and the last garbage collection times to
-  data/logs/hang-*.txt, and it notes the game's memory use every minute in data/logs/watch-*.log.
+  data/logs/hang-*.txt. It notes the game's memory use every minute, and map loads that take
+  longer than 20 seconds, in data/logs/watch-*.log.
   AKANEIRO_HANG_WATCH=0 turns it off.
 - The game's own log: ~/.config/unity3d/Spicy Horse/Akaneiro/Player.log

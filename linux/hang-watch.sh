@@ -1,13 +1,16 @@
 #!/bin/bash
 # Watches the running game, started in the background by run-game.sh:
 # - every minute, notes the game's memory use (data/logs/watch-*.log);
-# - when the game stops sending its pings to the server (every 2 seconds while it is connected)
-#   for HANG_SECONDS while it still runs, saves what every thread is doing to
+# - notes map loads that take longer than 20 seconds;
+# - when the game, while it sends its pings to the server (every 2 seconds in missions; not on
+#   every screen), sends nothing at all for HANG_SECONDS while it still runs, saves what every
+#   thread is doing to
 #   data/logs/hang-*.txt: thread states, and the C# stacks and locks from Mono's thread dump
 #   (SIGQUIT, which the game survives), plus the last garbage collections.
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
-# The game's preload libraries are not for gdb and the tools here.
-unset LD_PRELOAD
+# The game's preload libraries (Steam's overlay) are not for this script: in bash they print
+# "skipping destruction" for every subshell.
+[ -n "$LD_PRELOAD" ] && exec env -u LD_PRELOAD bash "$0" "$@"
 
 HANG_SECONDS="${AKANEIRO_HANG_SECONDS:-20}"
 mkdir -p "$AKANEIRO_DATA_DIR/logs"
@@ -27,26 +30,52 @@ memory() {
     echo "fds $(ls "/proc/$pid/fd" 2>/dev/null | wc -l)"
 }
 
-# Seconds since the last ping in the server log ("HH:MM:SS.fff info: ..." then "<- pingRequest").
-seconds_since_ping() {
-    local t
-    t="$(grep -B1 -- '<- pingRequest' "$SERVER_LOG" 2>/dev/null | tail -2 | head -1 | cut -c1-8)"
-    [[ "$t" =~ ^[0-9]{2}:[0-9]{2}:[0-9]{2}$ ]] || return 1
-    local now then
-    now=$(( 10#$(date +%H) * 3600 + 10#$(date +%M) * 60 + 10#$(date +%S) ))
-    then=$(( 10#${t:0:2} * 3600 + 10#${t:3:2} * 60 + 10#${t:6:2} ))
-    echo $(( (now - then + 86400) % 86400 ))
+# Seconds of the day of a server log line ("HH:MM:SS.fff info: ..."), and of now.
+day_seconds() { echo $(( 10#${1:0:2} * 3600 + 10#${1:3:2} * 60 + 10#${1:6:2} )); }
+now_seconds() { day_seconds "$(date +%T)"; }
+
+# The client's messages in the server log as "HH:MM:SS name", newest last.
+client_messages() {
+    awk '/^[0-9][0-9]:[0-9][0-9]:[0-9][0-9]/ {t = substr($0, 1, 8)}
+         /^ +<- / {sub(/^ +<- /, ""); print t, $1}' "$SERVER_LOG" 2>/dev/null | tail -n "$1"
 }
 
-# The client's last message; while it is EnterScene the game loads a map and sends no pings.
-last_client_message() {
-    grep -E -- '^ +<- ' "$SERVER_LOG" 2>/dev/null | tail -1 | sed -E 's/^ +<- //'
+# "quiet pinging last": seconds since the client's last message; 1 if it was still on a screen that
+# pings (its last two pings came about 2 seconds apart, the last one shortly before its last
+# message); and the name of its last message.
+client_state() {
+    local last pings p1 p2 pinging=0
+    last="$(client_messages 1)"
+    [[ "$last" =~ ^[0-9]{2}:[0-9]{2}:[0-9]{2}\  ]] || return 1
+    pings="$(client_messages 200 | grep ' pingRequest$' | tail -2 | cut -c1-8)"
+    p1="$(head -1 <<<"$pings")" p2="$(tail -1 <<<"$pings")"
+    if [ -n "$p1" ] && [ "$p1" != "$p2" ]; then
+        (( ($(day_seconds "$p2") - $(day_seconds "$p1") + 86400) % 86400 <= 4 )) \
+            && (( ($(day_seconds "$last") - $(day_seconds "$p2") + 86400) % 86400 <= 3 )) && pinging=1
+    fi
+    echo "$(( ($(now_seconds) - $(day_seconds "$last") + 86400) % 86400 )) $pinging ${last#* }"
+}
+
+# Map loads (EnterScene to MapLoadOK) noted so far.
+noted_loads=0
+note_slow_loads() {
+    local loads log="${1:-$WATCH_LOG}"
+    loads="$(client_messages +1 | awk '$2 == "EnterScene" {s = $1} $2 == "MapLoadOK" && s {print s, $1; s = ""}')"
+    local count
+    count=$(grep -c . <<<"$loads")
+    [ -n "$loads" ] || count=0
+    [ "$count" -gt "$noted_loads" ] || return 0
+    tail -n $((count - noted_loads)) <<<"$loads" | while read -r from to; do
+        local took=$(( ($(day_seconds "$to") - $(day_seconds "$from") + 86400) % 86400 ))
+        [ "$took" -gt 20 ] && echo "[$(date '+%T')] map load $from-$to took $took s ($(memory))" >>"$log"
+    done
+    noted_loads=$count
 }
 
 report() {
     local out="$AKANEIRO_DATA_DIR/logs/hang-$(date +%Y%m%d-%H%M%S).txt"
     {
-        echo "Game (PID $pid) sent no ping for $1 s at $(date '+%F %T')"
+        echo "Game (PID $pid) sent nothing for $1 s at $(date '+%F %T')"
         echo "Memory: $(memory)"
         echo
         echo "== Threads (name, state, kernel wait)"
@@ -79,22 +108,22 @@ report() {
 }
 
 echo "[$(date '+%T')] watching game PID $pid" >>"$WATCH_LOG"
+# Loads from before this game started are not its own.
+note_slow_loads /dev/null
 reported=0
-seen_ping=0
 tick=0
 while kill -0 "$pid" 2>/dev/null; do
     sleep 5
     tick=$((tick + 1))
     (( tick % 12 == 0 )) && echo "[$(date '+%T')] $(memory)" >>"$WATCH_LOG"
-    quiet="$(seconds_since_ping)" || continue
+    note_slow_loads
+    read -r quiet pinging last < <(client_state) || continue
     if [ "$quiet" -lt "$HANG_SECONDS" ]; then
-        seen_ping=1
         reported=0
         continue
     fi
-    # Only after this game pinged (not a ping from an older run), and not while a map loads.
-    [ $seen_ping = 1 ] || continue
-    [ "$(last_client_message)" = EnterScene ] && [ "$quiet" -lt 180 ] && continue
+    # Silence is only a hang on a screen that pings, and not while a map loads.
+    [ "$pinging" = 1 ] && [ "$last" != EnterScene ] || continue
     if [ $reported = 0 ]; then
         report "$quiet"
         reported=1

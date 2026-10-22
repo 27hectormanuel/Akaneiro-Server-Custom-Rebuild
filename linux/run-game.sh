@@ -37,6 +37,16 @@ export SteamAppId=230310 SteamGameId=230310
 # through the library path.
 export LD_LIBRARY_PATH="$PWD${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
+# Mono's garbage collector collects whenever a third of its heap is newly allocated. The game
+# allocates tens of MB per second and its heap grows during long missions, so this became
+# collections twice a second taking up to 100 ms each (stutter), and map loads of over a minute
+# after long missions. A large initial heap lets it allocate that much before collecting
+# (57 collections at startup become 2). AKANEIRO_GC_HEAP_MB=0 keeps Mono's default.
+GC_HEAP_MB="${AKANEIRO_GC_HEAP_MB:-512}"
+if [ "$GC_HEAP_MB" -gt 0 ] 2>/dev/null; then
+    export GC_INITIAL_HEAP_SIZE="${GC_INITIAL_HEAP_SIZE:-$((GC_HEAP_MB * 1024 * 1024))}"
+fi
+
 # Notes memory use and saves thread stacks if the game hangs (data/logs). AKANEIRO_HANG_WATCH=0 = off.
 if [ "${AKANEIRO_HANG_WATCH:-1}" != 0 ]; then
     # Garbage collection times in the game log, to tell GC pauses from other stalls.

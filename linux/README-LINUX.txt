@@ -10,9 +10,11 @@ guide does with the hosts file, port 80 and Steam, without needing root:
   lookups of mw.angry-red.com with the server's address (instead of /etc/hosts) and moves its
   connection to port 80 to the server's web port, 8880 (ports below 1024 need root on Linux).
 - Speech bubbles use the system font "Arial", which this Unity version only looks for in
-  /usr/share/fonts. The redirect library adds the free Arial replacement that comes with Proton
-  (any installed Proton, found automatically; or set AKANEIRO_FONT_DIR to a folder with an
-  arial.ttf). Without it the bubbles appear without text.
+  /usr/share/fonts. The redirect library adds a folder of our own to that search. By default it
+  holds the game's own "edo" font (taken from your game data on the first start and named Arial,
+  in data/fonts). AKANEIRO_BUBBLE_FONT=arial gives the original look instead: Proton's free
+  Arial replacement (any installed Proton, found automatically). Without either the bubbles
+  appear without text.
 - The game is started through Steam's old "scout" runtime (from Steam Linux Runtime 1.0, or the
   former ubuntu12_32/steam-runtime, which Steam replaced with a stub in late 2026). Started directly, or inside the
   newer Steam Linux Runtime containers, this Unity version crashes in the 32-bit Mesa driver.
@@ -79,6 +81,9 @@ AKANEIRO_SERVER_IP (127.0.0.1)
                              (PublicHost) and by the redirect library in the game.
 AKANEIRO_LISTEN (127.0.0.1)  where the web service listens; 0.0.0.0 for a home network.
 AKANEIRO_DATA_DIR (data)     save games and the server log.
+AKANEIRO_BUBBLE_FONT (edo)   font of the speech bubbles: edo (the game's own font) or arial
+                             (the original look). In Steam, put it before the wrapper:
+                             AKANEIRO_BUBBLE_FONT=arial "/path/to/linux/steam-launch.sh" %command%
 
 Save games are the same JSON files as on Windows (data/accounts/<Steam ID>.json), so they can
 be copied between both.

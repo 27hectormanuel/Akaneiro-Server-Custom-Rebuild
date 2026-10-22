@@ -121,4 +121,6 @@ TROUBLESHOOTING
 - After a SteamOS update the redirect library will not build ("No module named ziglang"): the
   system Python changed; recreate the zig environment with
       rm -rf ../.toolchain && python3 -m venv ../.toolchain && ../.toolchain/bin/pip install ziglang
+- Logs of the last 10 runs are kept in data/logs (server-*, game-*, launch-*), so a problem can
+  still be looked at after the game was started again.
 - The game's own log: ~/.config/unity3d/Spicy Horse/Akaneiro/Player.log

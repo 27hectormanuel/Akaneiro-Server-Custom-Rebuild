@@ -10,6 +10,9 @@ shift
 cd "$GAME_DIR"
 [ -f Akaneiro.x86 ] || { echo "No Akaneiro.x86 in $GAME_DIR" >&2; exit 1; }
 
+# Keep the game log of the previous run (Unity starts it anew).
+keep_log "$UNITY_LOG" game
+
 # Mono in this old Unity crashes with some locales.
 export LC_ALL=en_US.UTF-8
 export LD_PRELOAD="$(redirect_preload)"

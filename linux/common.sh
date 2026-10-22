@@ -84,3 +84,16 @@ find_scout_runtime() {
     fi
     return 1
 }
+
+# Moves a finished log into data/logs (name-YYYYmmdd-HHMMSS.log, by the log's own time) before it
+# is started anew, and keeps the newest 10 of each kind.
+keep_log() {
+    local log="$1" name="$2" dir="$AKANEIRO_DATA_DIR/logs"
+    [ -s "$log" ] || return 0
+    mkdir -p "$dir"
+    cp "$log" "$dir/$name-$(date -r "$log" +%Y%m%d-%H%M%S).log"
+    ls -1t "$dir/$name-"*.log 2>/dev/null | tail -n +11 | xargs -r rm -f
+}
+
+# Unity's log of the game; it is overwritten every time the game starts.
+UNITY_LOG="$HOME/.config/unity3d/Spicy Horse/Akaneiro/Player.log"

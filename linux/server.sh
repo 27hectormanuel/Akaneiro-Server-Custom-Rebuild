@@ -20,7 +20,7 @@ SERVER_DLL="$REPO_DIR/src/Akaneiro.Server/bin/Release/net8.0/Akaneiro.Server.dll
 build() {
     DOTNET="$(find_dotnet)"
     export DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1
-    "$DOTNET" build "$REPO_DIR/src/Akaneiro.Server" -c Release -v quiet -nologo >&2
+    "$DOTNET" build "$REPO_DIR/src/Akaneiro.Server" -c Release -v quiet -nologo >/dev/null || "$DOTNET" build "$REPO_DIR/src/Akaneiro.Server" -c Release -nologo >&2
 }
 
 SERVER_ARGS=(
@@ -29,6 +29,9 @@ SERVER_ARGS=(
     --Akaneiro:GamePort="$AKANEIRO_GAME_PORT"
     --Akaneiro:PublicHost="$AKANEIRO_SERVER_IP"
     --Akaneiro:DataDir="$AKANEIRO_DATA_DIR"
+    # Times in the log, to see how long the game waited for an answer.
+    --Logging:Console:FormatterName=simple
+    --Logging:Console:FormatterOptions:TimestampFormat="HH:mm:ss.fff "
 )
 
 mkdir -p "$AKANEIRO_DATA_DIR"
@@ -42,6 +45,7 @@ case "$cmd" in
         if server_running; then echo "Server already running (PID $(cat "$SERVER_PID"))"; exit 0; fi
         build
         cd "$REPO_DIR/src/Akaneiro.Server"
+        keep_log "$SERVER_LOG" server
         nohup "$DOTNET" "$SERVER_DLL" "${SERVER_ARGS[@]}" "$@" >"$SERVER_LOG" 2>&1 &
         echo $! >"$SERVER_PID"
         for _ in $(seq 60); do

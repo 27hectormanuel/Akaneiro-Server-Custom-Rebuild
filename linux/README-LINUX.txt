@@ -83,6 +83,7 @@ AKANEIRO_LISTEN (127.0.0.1)  where the web service listens; 0.0.0.0 for a home n
 AKANEIRO_DATA_DIR (data)     save games and the server log.
 AKANEIRO_GC_HEAP_MB (512)    initial size of the game's memory for C# objects (see "stutter"
                              below); 0 = Mono's default.
+AKANEIRO_FRAME_PACING (1)    0 = the game's own frame limiter as it is (see "frame rate" below).
 AKANEIRO_BUBBLE_FONT (edo)   font of the speech bubbles: edo (the game's own font) or arial
                              (the original look). In Steam, put it before the wrapper:
                              AKANEIRO_BUBBLE_FONT=arial "/path/to/linux/steam-launch.sh" %command%
@@ -137,6 +138,10 @@ TROUBLESHOOTING
   often. The game's heap also keeps growing during a mission (12 to 87 MB in 30 minutes), which
   makes each collection and the next map load slower; going back to the village and restarting
   the game now and then resets it.
+- Frame rate: the game limits itself to 60 fps, but Unity's limiter sleeps in 1 ms steps and
+  overshoots, which gave 57.5 fps with uneven frames (16.7 to 18 ms) on a Steam Deck. The redirect
+  library times the limiter's last sleep of each frame exactly instead: 59.8 fps, every frame
+  within 0.3 ms of the others. Leave Steam's frame rate limit off (or at 60) for this game.
 - The game freezes: linux/hang-watch.sh runs with every game. When the game, on a screen where it
   pings the server, sends nothing for 20 seconds, it saves the C# stacks and held locks of all game threads (Mono's
   thread dump, which the game survives) and the last garbage collection times to

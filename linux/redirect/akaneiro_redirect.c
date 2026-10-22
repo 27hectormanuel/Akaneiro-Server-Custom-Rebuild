@@ -170,6 +170,86 @@ int glob(const char *pattern, int flags, int (*errfunc)(const char *, int), glob
     return r;
 }
 
+/*
+ * Frame pacing. The game caps itself at 60 frames per second (Application.targetFrameRate) and
+ * Unity waits out the rest of each frame by sleeping 1 ms at a time on the main thread until
+ * 1/60 s has passed. The wait therefore ends up to a millisecond late (17.3 ms frames, 58 fps: a
+ * repeated frame on the 60 Hz screen a few times a second). Here each 1 ms sleep of the game's
+ * main thread stays 1 ms while more than that is left of the frame, and the last one sleeps just
+ * the rest, with the thread's timer slack lowered from 50 us to 1 us. Measured on a Steam Deck:
+ * 57.5 fps with frames of 16.7 to 18 ms before, 59.8 fps with all frames within 0.3 ms of each
+ * other after. AKANEIRO_FRAME_PACING=0 turns it off.
+ */
+#include <sys/prctl.h>
+#include <sys/syscall.h>
+#include <time.h>
+#include <unistd.h>
+
+#define FRAME_NS 16666667LL
+
+extern char *program_invocation_short_name;
+
+static long long frame_start, last_wake;
+
+static long long now_ns(void)
+{
+    struct timespec t;
+    clock_gettime(CLOCK_MONOTONIC, &t);
+    return t.tv_sec * 1000000000LL + t.tv_nsec;
+}
+
+/* True in the game's main thread with frame pacing on. */
+static int paces_frames(void)
+{
+    static int on = -1;
+    if (on < 0) {
+        const char *p = getenv("AKANEIRO_FRAME_PACING");
+        on = !(p && *p == '0') && strncmp(program_invocation_short_name, "Akaneiro", 8) == 0;
+    }
+    if (!on || syscall(SYS_gettid) != getpid())
+        return 0;
+    static int slack_set;
+    if (!slack_set) {
+        prctl(PR_SET_TIMERSLACK, 1000UL, 0, 0, 0);
+        slack_set = 1;
+    }
+    return 1;
+}
+
+/*
+ * Stands in for one of the frame limiter's 1 ms sleeps: 1 ms while more than 1.5 ms of the frame
+ * is left, otherwise just the rest of it. A frame starts where the previous frame's sleeps ended.
+ */
+static int frame_sleep(void)
+{
+    REAL(nanosleep);
+    long long now = now_ns();
+    if (now - last_wake > 2000000)  /* the first sleep of this frame */
+        frame_start = last_wake;
+    long long left = frame_start + FRAME_NS - now;
+    /* The last sleep ends just past the frame, so the game's own check lets it go at once. */
+    struct timespec t = {0, (long)(left > 1500000 ? 1000000 : left > 0 ? left + 10000 : 20000)};
+    int r = real_nanosleep(&t, NULL);
+    last_wake = now_ns();
+    return r;
+}
+
+int usleep(useconds_t usec)
+{
+    REAL(usleep);
+    if (usec != 1000 || !paces_frames())
+        return real_usleep(usec);
+    return frame_sleep();
+}
+
+int nanosleep(const struct timespec *req, struct timespec *rem)
+{
+    REAL(nanosleep);
+    if (!req || req->tv_sec != 0 || req->tv_nsec != 1000000 || !paces_frames())
+        return real_nanosleep(req, rem);
+    return frame_sleep();
+}
+
 int connect(int fd, const struct sockaddr *addr, socklen_t len)
 {
     REAL(connect);

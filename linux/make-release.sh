@@ -10,7 +10,8 @@ source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 cd "$REPO_DIR"
 
 VERSION="${1:-$(git describe --tags --always --dirty)}"
-NAME="akaneiro-server-linux-$VERSION"
+# Tags of Linux releases are linux-v<n>: the "linux-" is in the name already.
+NAME="akaneiro-server-linux-${VERSION#linux-}"
 STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
 OUT="$STAGE/akaneiro-server"

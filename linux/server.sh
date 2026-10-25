@@ -14,14 +14,23 @@ case "$1" in
 esac
 [ "$1" = "--" ] && shift
 
-# The server runs from its project folder (relative settings resolve against it, as with "dotnet run").
-SERVER_DLL="$REPO_DIR/src/Akaneiro.Server/bin/Release/net8.0/Akaneiro.Server.dll"
-
-build() {
-    DOTNET="$(find_dotnet)"
-    export DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1
-    "$DOTNET" build "$REPO_DIR/src/Akaneiro.Server" -c Release -v quiet -nologo >/dev/null || "$DOTNET" build "$REPO_DIR/src/Akaneiro.Server" -c Release -nologo >&2
-}
+# A release has the server prebuilt in server/ (self-contained, no .NET needed); in the source
+# repository it is built from src/Akaneiro.Server. Either runs from its own folder, where its
+# appsettings.json is (relative settings resolve against it, as with "dotnet run").
+PREBUILT="$REPO_DIR/server/Akaneiro.Server"
+if [ -x "$PREBUILT" ]; then
+    SERVER_DIR="$REPO_DIR/server"
+    build() { SERVER=("$PREBUILT"); }
+else
+    SERVER_DIR="$REPO_DIR/src/Akaneiro.Server"
+    build() {
+        DOTNET="$(find_dotnet)"
+        export DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1
+        "$DOTNET" build "$SERVER_DIR" -c Release -v quiet -nologo >/dev/null \
+            || "$DOTNET" build "$SERVER_DIR" -c Release -nologo >&2
+        SERVER=("$DOTNET" "$SERVER_DIR/bin/Release/net8.0/Akaneiro.Server.dll")
+    }
+fi
 
 SERVER_ARGS=(
     --Akaneiro:HttpPort="$AKANEIRO_HTTP_PORT"
@@ -29,6 +38,7 @@ SERVER_ARGS=(
     --Akaneiro:GamePort="$AKANEIRO_GAME_PORT"
     --Akaneiro:PublicHost="$AKANEIRO_SERVER_IP"
     --Akaneiro:DataDir="$AKANEIRO_DATA_DIR"
+    --Akaneiro:ClientAssetsDir="$REPO_DIR/client-source"
     # Times in the log, to see how long the game waited for an answer.
     --Logging:Console:FormatterName=simple
     --Logging:Console:FormatterOptions:TimestampFormat="HH:mm:ss.fff "
@@ -38,15 +48,15 @@ mkdir -p "$AKANEIRO_DATA_DIR"
 case "$cmd" in
     run)
         build
-        cd "$REPO_DIR/src/Akaneiro.Server"
-        exec "$DOTNET" "$SERVER_DLL" "${SERVER_ARGS[@]}" "$@"
+        cd "$SERVER_DIR"
+        exec "${SERVER[@]}" "${SERVER_ARGS[@]}" "$@"
         ;;
     start)
         if server_running; then echo "Server already running (PID $(cat "$SERVER_PID"))"; exit 0; fi
         build
-        cd "$REPO_DIR/src/Akaneiro.Server"
+        cd "$SERVER_DIR"
         keep_log "$SERVER_LOG" server
-        nohup "$DOTNET" "$SERVER_DLL" "${SERVER_ARGS[@]}" "$@" >"$SERVER_LOG" 2>&1 &
+        nohup "${SERVER[@]}" "${SERVER_ARGS[@]}" "$@" >"$SERVER_LOG" 2>&1 &
         echo $! >"$SERVER_PID"
         for _ in $(seq 60); do
             server_ready && { echo "Server running (PID $(cat "$SERVER_PID")), log: $SERVER_LOG"; exit 0; }

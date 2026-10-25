@@ -20,11 +20,39 @@ guide does with the hosts file, port 80 and Steam, without needing root:
   newer Steam Linux Runtime containers, this Unity version crashes in the 32-bit Mesa driver.
 
 
-WHAT YOU NEED
--------------
+EASIEST: THE RELEASE INSTALLER (STEAM DECK, ALSO GAME MODE)
+-----------------------------------------------------------
 
-- Steam, running and logged in, with Akaneiro: Demon Hunters in your library. The game logs in
-  with your Steam account, as on Windows.
+You need Steam, logged in, with Akaneiro: Demon Hunters in your library (installed as the native
+Linux version; do not force Proton for it). Nothing else: the release has the server prebuilt.
+
+1. In Desktop Mode, download akaneiro-server-linux-<version>-installer.sh from the repository's
+   Releases page.
+2. In a terminal (Konsole):
+
+       bash ~/Downloads/akaneiro-server-linux-*-installer.sh
+
+3. Start Akaneiro from Steam, in Desktop or Game Mode.
+
+The installer unpacks into ~/Akaneiro-Server (AKANEIRO_INSTALL_DIR=<folder> for another place)
+and runs linux/install.sh there, which:
+- finds the game in your Steam libraries (SD cards too), and Steam Linux Runtime 1.0 (scout);
+  if one is missing it opens Steam to install it, and you run the installer again afterwards;
+- tests the server;
+- makes the speech bubble font from your game's data (downloads the Python modules UnityPy and
+  fontTools into ~/Akaneiro-Server/.venv once);
+- sets Akaneiro's launch options in Steam to linux/steam-launch.sh (Steam closes and starts again
+  for that, as it rewrites its settings when it exits).
+
+Keep ~/Akaneiro-Server where it is: Steam starts the game through it. Save games are in its
+data/accounts folder. To update, run a newer installer; it keeps the data folder. To go back to
+the plain game: ~/Akaneiro-Server/linux/install.sh --uninstall (takes out the launch options).
+
+
+FROM A COPY OF THIS REPOSITORY
+------------------------------
+
+Needs, in addition:
 - The .NET 8 SDK. Without root:
       curl -sSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 8.0
   (installs to ~/.dotnet, which the scripts find on their own).
@@ -32,11 +60,21 @@ WHAT YOU NEED
       python3 -m pip install --user ziglang
   It is built automatically the first time it is needed (or: sh linux/redirect/build.sh).
 
+Then, in the repository folder:
 
-OPTION A: FROM STEAM (RECOMMENDED)
-----------------------------------
+    linux/install.sh
 
-1. Install Akaneiro in Steam (the native Linux version; do not force Proton for it).
+does the same setup as the release installer, with this folder as the installation.
+linux/make-release.sh builds the release files (dist/) from it.
+
+
+OPTION A: FROM STEAM BY HAND
+----------------------------
+
+What install.sh sets up, step by step:
+
+1. Install Akaneiro in Steam (the native Linux version; do not force Proton for it), and
+   "Steam Linux Runtime 1.0 (scout)" (Library > Tools).
 2. Properties > General > Launch Options:
 
        "/full/path/to/Akaneiro-Server-Custom-Rebuild/linux/steam-launch.sh" %command%
@@ -123,7 +161,7 @@ TROUBLESHOOTING
   library are preloaded and each program takes the one that fits.
 - Started from Steam (also in Game Mode) and nothing happens: data/launch.log has the output of
   the last launch. "No Steam scout runtime found" means Steam Linux Runtime 1.0 (scout) is not
-  installed: install it from the Steam library (Tools), or any game that uses it.
+  installed: install it from the Steam library (Tools), or open steam://install/1070560.
 - Speech bubbles without text: no Proton is installed (install any Proton version in Steam) or
   AKANEIRO_FONT_DIR points to a folder without arial.ttf.
 - After a SteamOS update the redirect library will not build ("No module named ziglang"): the

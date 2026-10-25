@@ -65,19 +65,35 @@ server_is_local() {
         || ip -o addr show 2>/dev/null | grep -qw "inet $AKANEIRO_SERVER_IP"
 }
 
+# steamapps folders of every Steam library (the main one, SD cards, extra drives).
+steam_libraries() {
+    local lib
+    echo "$STEAM_ROOT/steamapps"
+    while IFS= read -r lib; do
+        [ "$lib/steamapps" -ef "$STEAM_ROOT/steamapps" ] || echo "$lib/steamapps"
+    done < <(grep -oP '^\s*"path"\s*"\K[^"]+' "$STEAM_ROOT/steamapps/libraryfolders.vdf" 2>/dev/null)
+}
+
+# Folder of the Steam copy of the game (Linux version).
+find_steam_game() {
+    local lib
+    while IFS= read -r lib; do
+        [ -f "$lib/common/Akaneiro Demon Hunters/Akaneiro.x86" ] \
+            && { echo "$lib/common/Akaneiro Demon Hunters"; return 0; }
+    done < <(steam_libraries)
+    return 1
+}
+
 # run.sh of the old scout LD_LIBRARY_PATH runtime. Steam used to ship it as ubuntu12_32/steam-runtime;
 # since late 2026 that is a stub that runs games on the host, and the runtime lives in
-# steamapps/common/LegacySteamRuntime or, still, in "Steam Linux Runtime 1.0 (scout)".
+# steamapps/common/LegacySteamRuntime or, still, in "Steam Linux Runtime 1.0 (scout)" (app 1070560).
 find_scout_runtime() {
-    local libs=("$STEAM_ROOT/steamapps") lib run
-    # Other Steam libraries (SD cards, extra drives).
-    while IFS= read -r lib; do libs+=("$lib/steamapps"); done < <(
-        grep -oP '^\s*"path"\s*"\K[^"]+' "$STEAM_ROOT/steamapps/libraryfolders.vdf" 2>/dev/null)
-    for lib in "${libs[@]}"; do
+    local lib run
+    while IFS= read -r lib; do
         for run in "$lib/common/LegacySteamRuntime/run.sh" "$lib/common/SteamLinuxRuntime/steam-runtime/run.sh"; do
             [ -x "$run" ] && { echo "$run"; return 0; }
         done
-    done
+    done < <(steam_libraries)
     run="$STEAM_ROOT/ubuntu12_32/steam-runtime/run.sh"
     if [ -x "$run" ] && [ "$(basename "$(realpath "$run")")" != legacy-run-stub.sh ]; then
         echo "$run"; return 0

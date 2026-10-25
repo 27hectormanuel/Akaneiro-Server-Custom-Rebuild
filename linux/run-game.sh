@@ -19,7 +19,9 @@ BUBBLE_FONT="${AKANEIRO_BUBBLE_FONT:-edo}"
 if [ "$BUBBLE_FONT" != arial ]; then
     font_dir="$AKANEIRO_DATA_DIR/fonts/$BUBBLE_FONT"
     if [ ! -f "$font_dir/arial.ttf" ]; then
-        py="$(dirname "$REPO_DIR")/.toolchain/bin/python"
+        # install.sh sets up .venv with UnityPy and fontTools.
+        py="$REPO_DIR/.venv/bin/python"
+        [ -x "$py" ] || py="$(dirname "$REPO_DIR")/.toolchain/bin/python"
         [ -x "$py" ] || py=python3
         "$py" -I "$LINUX_DIR/fonts/make-bubble-font.py" "$PWD" "$font_dir/arial.ttf" "$BUBBLE_FONT" >&2 \
             || echo "Could not make the '$BUBBLE_FONT' bubble font; the bubbles keep Arial" >&2

@@ -9,11 +9,9 @@ source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 GAME_DIR=""
 if [ -n "$1" ] && [ -d "$1" ]; then GAME_DIR="$1"; shift; fi
 if [ -z "$GAME_DIR" ]; then
-    for d in "$REPO_DIR/client" \
-             "$STEAM_ROOT/steamapps/common/Akaneiro Demon Hunters" \
-             /run/media/*/*/steamapps/common/"Akaneiro Demon Hunters"; do
-        [ -f "$d/Akaneiro.x86" ] && { GAME_DIR="$d"; break; }
-    done
+    if [ -f "$REPO_DIR/client/Akaneiro.x86" ]; then GAME_DIR="$REPO_DIR/client"
+    else GAME_DIR="$(find_steam_game)" || true
+    fi
 fi
 [ -n "$GAME_DIR" ] || { echo "Game not found: install it in Steam or run linux/setup-client.sh first" >&2; exit 1; }
 

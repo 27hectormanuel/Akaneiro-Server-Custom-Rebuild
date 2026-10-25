@@ -6,13 +6,15 @@ gone and the original server code is lost; this server is rebuilt from the clien
 Spicy Horse released into the public domain (https://github.com/SpicyHorseLegacy/akaneiro-client),
 so the unmodified Steam game can be played again on your own computer.
 
-- How to set it up and play: HOSTING.txt
-- Linux and Steam Deck (native game, no root needed): linux/README-LINUX.txt
+- How to set it up and play on Windows: HOSTING.txt
+- Linux, SteamOS and Steam Deck (native game, also in Game Mode, no root needed): see "Quick
+  start on Linux / Steam Deck" below and linux/README-LINUX.txt
 - What does not work (yet), and the assumptions made where the original rules are lost:
   KNOWN-ISSUES.txt
 
 The game client is never changed. Everything happens on the server side: a stand-in for the
-game's old login service (mw.angry-red.com) and the game server itself.
+game's old login service (mw.angry-red.com) and the game server itself. (On Linux a small
+library loaded into the game takes the place of the hosts file entry; see linux/README-LINUX.txt.)
 
 
 WHAT WORKS
@@ -51,6 +53,9 @@ tools/TestClient
     Smoke test of a running server over the real network path.
 tests/Akaneiro.Server.Tests
     In-process game logic tests (xUnit).
+linux
+    Linux, SteamOS and Steam Deck support: launch scripts, the Steam launch option wrapper, the
+    installer and release builder, and the redirect library (see linux/README-LINUX.txt).
 data
     Save data, created at runtime (one JSON file per account; not part of the repository).
 
@@ -60,8 +65,31 @@ tables (items, abilities, levels, prices, ...) are read when the server starts. 
 client-source, so the repository is all the server needs.
 
 
-QUICK START
------------
+QUICK START ON LINUX / STEAM DECK
+---------------------------------
+
+Requirements: Steam, logged in, with Akaneiro installed (the native Linux version, not Proton).
+Nothing else: the release contains the server ready to run.
+
+1. In Desktop Mode, download akaneiro-server-linux-<version>-installer.sh from the Releases page
+   of this repository.
+2. Open a terminal (Konsole) and run it:
+
+       bash ~/Downloads/akaneiro-server-linux-*-installer.sh
+
+   It installs into ~/Akaneiro-Server, checks that the game and Steam Linux Runtime 1.0 (scout)
+   are installed (and opens Steam to install them if not), and sets Akaneiro's launch options in
+   Steam. Steam closes and starts again while it does that.
+3. Start Akaneiro from Steam, in Desktop Mode or in Game Mode. The server starts with the game and
+   stops when the game ends.
+
+Save games are in ~/Akaneiro-Server/data/accounts. Running a newer installer updates the
+installation and keeps them. From a copy of this repository instead: linux/install.sh (needs the
+.NET 8 SDK). Details, options and troubleshooting: linux/README-LINUX.txt.
+
+
+QUICK START ON WINDOWS
+----------------------
 
 Requirements: Windows, the .NET 8 SDK and Akaneiro on Steam. Details and troubleshooting:
 HOSTING.txt.
@@ -92,6 +120,16 @@ threat level for reachable monsters.
 A one-second smoke test of a running server over the real network path (web login, TCP,
 heartbeat, entering a scene), for example against a second instance started with
 --Akaneiro:HttpPort=8081 --Akaneiro:GamePort=7101 --Akaneiro:DataDir=<other folder>
+
+
+LINUX RELEASE
+-------------
+
+    linux/make-release.sh [version]
+
+Builds the release files in dist/: the server as a self-contained linux-x64 program (no .NET
+needed to run it), the redirect library, the scripts and the client data tables, as a .tar.gz
+and as the self-extracting installer described above.
 
 
 REGENERATING GENERATED FILES
